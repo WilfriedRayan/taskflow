@@ -13,12 +13,17 @@ RUN npm ci --omit=dev
 # 5. Puis le code source
 COPY . .
 
-# 6. Configuration et documentation du port
-ENV PORT=3000
+# 6. Configuration (modifiable avec "docker run -e") et documentation du port
+ENV PORT=3000 \
+    APP_ENV=production
 EXPOSE 3000
 
 # 7. Sécurité : on n'exécute pas l'application en root
 USER node
 
-# 8. Commande lancée au démarrage du conteneur
+# 8. Docker vérifie toutes les 30 s que l'API répond (statut "healthy" / "unhealthy")
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget -qO- http://localhost:3000/health || exit 1
+
+# 9. Commande lancée au démarrage du conteneur (forme exec : reçoit bien SIGTERM)
 CMD ["node", "server.js"]
